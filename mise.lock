@@ -1,0 +1,12 @@
+[[tools.java]]
+version = "temurin-21.0.9+10.0.LTS"
+backend = "core:java"
+
+[[tools.maven]]
+version = "3.9.12"
+backend = "aqua:apache/maven"
+"platforms.macos-arm64" = { checksum = "blake3:07cf3b70c8b3c50ac71d7a4fae12a7fc78e8fd2f768eb2e3dfe13a7704fefa7e", url = "https://archive.apache.org/dist/maven/maven-3/3.9.12/binaries/apache-maven-3.9.12-bin.tar.gz"}
+
+[[tools.python]]
+version = "3.13.11"
+backend = "core:python"

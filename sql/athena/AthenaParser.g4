@@ -108,7 +108,34 @@ order_item
     ;
 
 from_item
-    : table_name
+    : relation (join_relation)*
+    ;
+
+relation
+    : table_ref (AS? alias)?
+    | table_subquery (AS? alias)?
+    ;
+
+table_ref
+    : (db_name '.')? table_name
+    ;
+
+join_relation
+    : join_type relation join_criteria
+    | CROSS JOIN relation
+    ;
+
+join_type
+    : JOIN
+    | INNER JOIN
+    | LEFT OUTER? JOIN
+    | RIGHT OUTER? JOIN
+    | FULL OUTER? JOIN
+    ;
+
+join_criteria
+    : ON boolean_expression
+    | USING '(' column_list ')'
     ;
 
 count
@@ -525,7 +552,7 @@ expression
     : primitive_expression
     | '(' expression ')'
     | table_subquery
-    | id_ '(' expression_list_ ')'
+    | function_call
     | case_expression
     | when_expression
     | op = (PLUS | MINUS) expression
@@ -533,6 +560,10 @@ expression
     | expression op = (PLUS | MINUS) expression
     | expression DOT expression
     | CAST '(' expression AS data_type ')'
+    ;
+
+function_call
+    : id_ '(' (expression_list_ | STAR) ')'
     ;
 
 case_expression
@@ -551,8 +582,14 @@ primitive_expression
 literal
     : number
     | string
+    | date_time_literal
     | true_false
     | NULL_
+    ;
+
+date_time_literal
+    : DATE string
+    | TIMESTAMP string
     ;
 
 int_number
@@ -651,8 +688,116 @@ source_alias
 
 id_
     : IDENTIFIER
+    | BACKTICK_QUOTED_IDENTIFIER
     | DQ_STRING_LITERAL
+    | non_reserved_keyword
     ;
+
+// @non_reserved_keyword:start
+non_reserved_keyword
+    : ADD
+    | ALL
+    | ANALYZE
+    | ANY
+    | ARRAY
+    | ASC
+    | AVRO
+    | BIGINT
+    | BINARY
+    | BIN_PACK
+    | BOOLEAN
+    | BUCKETS
+    | CASCADE
+    | CHAR
+    | CLUSTERED
+    | COLLECTION
+    | COLUMNS
+    | COMMENT
+    | DATA
+    | DATABASE
+    | DATABASES
+    | DATE
+    | DBPROPERTIES
+    | DECIMAL
+    | DEFINED
+    | DELIMITED
+    | DESC
+    | DISTRIBUTED
+    | DOUBLE
+    | ESCAPED
+    | EXPLAIN
+    | EXTENDED
+    | EXTERNAL
+    | FIELDS
+    | FLOAT
+    | FORMAT
+    | FORMATTED
+    | GRAPHVIZ
+    | IF
+    | INPUTFORMAT
+    | INT
+    | INTEGER
+    | IO
+    | ION
+    | ITEMS
+    | JSON
+    | KEYS
+    | LIMIT
+    | LINES
+    | LOCATION
+    | LOGICAL
+    | MAP
+    | MATCHED
+    | MERGE
+    | MSCK
+    | NO
+    | NULLS
+    | OFFSET
+    | OPTIMIZE
+    | ORC
+    | OUTPUTFORMAT
+    | PARQUET
+    | PARTITION
+    | PARTITIONED
+    | PARTITIONS
+    | RCFILE
+    | RENAME
+    | REPAIR
+    | REPLACE
+    | RESTRICT
+    | REWRITE
+    | ROW
+    | ROWS
+    | SCHEMA
+    | SCHEMAS
+    | SEQUENCEFILE
+    | SERDE
+    | SERDEPROPERTIES
+    | SET
+    | SHOW
+    | SMALLINT
+    | SOME
+    | STORED
+    | STRING
+    | STRUCT
+    | TABLES
+    | TBLPROPERTIES
+    | TERMINATED
+    | TEXT
+    | TEXTFILE
+    | TIMESTAMP
+    | TINYINT
+    | TO
+    | TYPE
+    | UNLOAD
+    | UPDATE
+    | VACUUM
+    | VALIDATE
+    | VARCHAR
+    | VIEW
+    | VIEWS
+    ;
+// @non_reserved_keyword:end
 
 if_not_exists
     : IF NOT EXISTS
