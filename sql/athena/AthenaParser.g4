@@ -108,29 +108,36 @@ order_item
     ;
 
 from_item
-    : relation (join_relation)*
+    : relation
     ;
 
 relation
-    : table_ref (AS? alias)?
-    | table_subquery (AS? alias)?
+    : relation
+      ( CROSS JOIN aliased_relation
+      | join_type JOIN relation join_criteria
+      )
+    | aliased_relation
+    ;
+
+aliased_relation
+    : relation_primary (AS? alias)?
+    ;
+
+relation_primary
+    : table_ref
+    | table_subquery
+    | '(' relation ')'
     ;
 
 table_ref
-    : (db_name '.')? table_name
-    ;
-
-join_relation
-    : join_type relation join_criteria
-    | CROSS JOIN relation
+    : qualified_name
     ;
 
 join_type
-    : JOIN
-    | INNER JOIN
-    | LEFT OUTER? JOIN
-    | RIGHT OUTER? JOIN
-    | FULL OUTER? JOIN
+    : INNER?
+    | LEFT OUTER?
+    | RIGHT OUTER?
+    | FULL OUTER?
     ;
 
 join_criteria
@@ -143,7 +150,7 @@ count
     ;
 
 with_query
-    : id_ AS '(' select_statement ')'
+    : id_ AS '(' query ')'
     ;
 
 grouping_element
@@ -156,7 +163,7 @@ condition
 
 insert_into
     : INSERT INTO destination_table ('(' column_list ')')? (
-        select_statement
+        query
         | VALUES value_list (',' value_list)*
     )
     ;
@@ -171,15 +178,16 @@ select_list
 
 select_item
     : expression (AS? alias)?
-    | (table_name '.')? '*'
+    | qualified_name '.' '*'
+    | '*'
     ;
 
 delete_stmt
-    : DELETE FROM (db_name '.')? table_name (WHERE predicate)?
+    : DELETE FROM qualified_name (WHERE predicate)?
     ;
 
 update
-    : UPDATE (db_name '.')? table_name SET col_name '=' expression (',' col_name '=' expression)* (
+    : UPDATE qualified_name SET col_name '=' expression (',' col_name '=' expression)* (
         WHERE predicate
     )?
     ;
@@ -222,7 +230,7 @@ update_delete
     ;
 
 optimize_stmt
-    : OPTIMIZE (db_name '.')? table_name REWRITE DATA USING BIN_PACK (WHERE predicate)?
+    : OPTIMIZE qualified_name REWRITE DATA USING BIN_PACK (WHERE predicate)?
     ;
 
 vacuum
@@ -230,11 +238,11 @@ vacuum
     ;
 
 target_table
-    : table_name
+    : qualified_name
     ;
 
 source_table
-    : table_name
+    : qualified_name
     ;
 
 explain
@@ -310,8 +318,8 @@ kv_pair
     ;
 
 alter_table_add_cols
-    : ALTER TABLE table_name (PARTITION '(' part_col_name_value (',' part_col_name_value)* ')')? ADD COLUMNS (
-        col_name data_type
+    : ALTER TABLE qualified_table_name (PARTITION '(' part_col_name_value (',' part_col_name_value)* ')')? ADD COLUMNS (
+        col_name_ddl data_type
     )
     ;
 
@@ -320,7 +328,7 @@ part_col_name_value
     ;
 
 partition_col_name
-    : col_name
+    : col_name_ddl
     ;
 
 partition_col_value
@@ -328,13 +336,13 @@ partition_col_value
     ;
 
 alter_table_add_part
-    : ALTER TABLE table_name ADD if_not_exists? (
+    : ALTER TABLE qualified_table_name ADD if_not_exists? (
         PARTITION '(' part_col_name_value (',' part_col_name_value)* ')' (LOCATION string)?
     )+
     ;
 
 alter_table_drop_part
-    : ALTER TABLE table_name DROP if_exists? PARTITION '(' partition_spec ')' (
+    : ALTER TABLE qualified_table_name DROP if_exists? PARTITION '(' partition_spec ')' (
         ',' PARTITION '(' partition_spec ')'
     )*
     ;
@@ -344,21 +352,21 @@ partition_spec
     ;
 
 alter_table_rename_part
-    : ALTER TABLE table_name PARTITION (partition_spec) RENAME TO PARTITION (np = partition_spec)
+    : ALTER TABLE qualified_table_name PARTITION (partition_spec) RENAME TO PARTITION (np = partition_spec)
     ;
 
 alter_table_replace_part
-    : ALTER TABLE table_name (PARTITION '(' part_col_name_value (',' part_col_name_value)* ')')? REPLACE COLUMNS '(' col_name data_type (
-        ',' col_name data_type
+    : ALTER TABLE qualified_table_name (PARTITION '(' part_col_name_value (',' part_col_name_value)* ')')? REPLACE COLUMNS '(' col_name_ddl data_type (
+        ',' col_name_ddl data_type
     )* ')'
     ;
 
 alter_table_set_location
-    : ALTER TABLE table_name (PARTITION '(' partition_spec ')')? SET LOCATION string
+    : ALTER TABLE qualified_table_name (PARTITION '(' partition_spec ')')? SET LOCATION string
     ;
 
 alter_table_set_props
-    : ALTER TABLE table_name SET TBLPROPERTIES '(' kv_pair (',' kv_pair)* ')'
+    : ALTER TABLE qualified_table_name SET TBLPROPERTIES '(' kv_pair (',' kv_pair)* ')'
     ;
 
 create_database
@@ -368,11 +376,11 @@ create_database
     ;
 
 create_table
-    : CREATE EXTERNAL TABLE if_not_exists? (db_name '.')? table_name (
+    : CREATE EXTERNAL TABLE if_not_exists? qualified_table_name (
         '(' col_def_with_comment (',' col_def_with_comment)* ')'
     )? (COMMENT table_comment)? (
         PARTITIONED BY '(' col_def_with_comment (',' col_def_with_comment)* ')'
-    )? (CLUSTERED BY '(' col_name (',' col_name)* ')' INTO num_buckets BUCKETS)? (
+    )? (CLUSTERED BY '(' col_name_ddl (',' col_name_ddl)* ')' INTO num_buckets BUCKETS)? (
         ROW FORMAT row_format
     )? (STORED AS file_format)? LOCATION string (TBLPROPERTIES '(' property_list ')')?
     ;
@@ -423,7 +431,7 @@ num_buckets
     ;
 
 col_def_with_comment
-    : col_name data_type (COMMENT col_comment)?
+    : col_name_ddl data_type (COMMENT col_comment)?
     ;
 
 col_comment
@@ -431,7 +439,7 @@ col_comment
     ;
 
 create_table_as
-    : CREATE TABLE table_name (WITH '(' prop_exp (',' prop_exp)* ')')? AS query (WITH NO? DATA)?
+    : CREATE TABLE qualified_table_name (WITH '(' prop_exp (',' prop_exp)* ')')? AS query (WITH NO? DATA)?
     ;
 
 property_name
@@ -443,11 +451,11 @@ prop_exp
     ;
 
 create_view
-    : CREATE or_replace? VIEW view_name AS query
+    : CREATE or_replace? VIEW qualified_view_name AS query
     ;
 
 describe
-    : DESCRIBE (EXTENDED | FORMATTED)? (db_name '.')? table_name (PARTITION partition_spec)?
+    : DESCRIBE (EXTENDED | FORMATTED)? qualified_table_name (PARTITION partition_spec)?
     //(col_name ( [.field_name] | [.'$elem$'] | [.'$key$'] | [.'$value$'] ) )? //TODO - poor documentation vs actual functionality
     ;
 
@@ -456,7 +464,7 @@ field_name
     ;
 
 describe_view
-    : DESCRIBE view_name?
+    : DESCRIBE qualified_view_name?
     ;
 
 drop_database
@@ -464,28 +472,28 @@ drop_database
     ;
 
 drop_table
-    : DROP TABLE if_exists? table_name
+    : DROP TABLE if_exists? qualified_table_name
     ;
 
 drop_view
-    : DROP VIEW if_exists? view_name
+    : DROP VIEW if_exists? qualified_view_name
     ;
 
 msck
-    : MSCK REPAIR TABLE table_name
+    : MSCK REPAIR TABLE qualified_table_name
     ;
 
 show_columns
-    : SHOW COLUMNS from_in database_name '.' table_name
-    | SHOW COLUMNS from_in table_name (from_in database_name)?
+    : SHOW COLUMNS from_in qualified_table_name
+    | SHOW COLUMNS from_in table_name from_in schema_name
     ;
 
 show_create_table
-    : SHOW CREATE TABLE (db_name '.')? table_name
+    : SHOW CREATE TABLE qualified_table_name
     ;
 
 show_create_view
-    : SHOW CREATE VIEW view_name
+    : SHOW CREATE VIEW qualified_view_name
     ;
 
 show_databases
@@ -493,19 +501,19 @@ show_databases
     ;
 
 show_partitions
-    : SHOW PARTITIONS table_name
+    : SHOW PARTITIONS qualified_table_name
     ;
 
 show_tables
-    : SHOW TABLES (IN database_name)? reg_ex?
+    : SHOW TABLES (IN schema_name)? reg_ex?
     ;
 
 show_tblproperties
-    : SHOW TBLPROPERTIES table_name ('(' string ')')?
+    : SHOW TBLPROPERTIES qualified_table_name ('(' string ')')?
     ;
 
 show_views
-    : SHOW VIEWS (IN database_name)? (LIKE reg_ex)?
+    : SHOW VIEWS (IN schema_name)? (LIKE reg_ex)?
     ;
 
 query
@@ -535,7 +543,7 @@ pred
     ;
 
 table_subquery
-    : '(' select_statement ')'
+    : '(' query ')'
     ;
 
 comparison_operator
@@ -563,7 +571,7 @@ expression
     ;
 
 function_call
-    : id_ '(' (expression_list_ | STAR) ')'
+    : id_ '(' all_distinct? (expression_list_ | STAR) ')'
     ;
 
 case_expression
@@ -642,12 +650,16 @@ col_name
     : id_
     ;
 
-db_name
-    : id_
+col_name_ddl
+    : id_ddl
     ;
 
 database_name
-    : id_
+    : id_ddl
+    ;
+
+schema_name
+    : id_ddl ('.' id_ddl)?
     ;
 
 statement_name
@@ -655,15 +667,27 @@ statement_name
     ;
 
 table_name
-    : id_
+    : id_ddl
+    ;
+
+qualified_table_name
+    : (schema_name '.')? table_name
     ;
 
 view_name
-    : id_
+    : id_ddl
+    ;
+
+qualified_view_name
+    : (schema_name '.')? view_name
     ;
 
 destination_table
-    : id_
+    : qualified_name
+    ;
+
+qualified_name
+    : id_ ('.' id_)*
     ;
 
 string
@@ -688,9 +712,14 @@ source_alias
 
 id_
     : IDENTIFIER
-    | BACKTICK_QUOTED_IDENTIFIER
+    | DIGIT_IDENTIFIER
     | DQ_STRING_LITERAL
     | non_reserved_keyword
+    ;
+
+id_ddl
+    : id_
+    | BACKTICK_QUOTED_IDENTIFIER
     ;
 
 // @non_reserved_keyword:start

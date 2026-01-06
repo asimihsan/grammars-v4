@@ -1,0 +1,5 @@
+SELECT *
+FROM (
+  WITH t AS (SELECT 1 AS a)
+  SELECT a FROM t
+) x

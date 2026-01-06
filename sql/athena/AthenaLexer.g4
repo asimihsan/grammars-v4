@@ -212,15 +212,17 @@ fragment DIGIT: '0' ..'9';
 
 fragment DEC_DOT_DEC: (DIGIT+ '.' DIGIT+ | DIGIT+ '.' | '.' DIGIT+);
 
-IDENTIFIER: Letter (Letter | DIGIT | '_')*;
-
-SQ_STRING_LITERAL: '\'' ( ~('\'' | '\\') | ('\\' .))* '\'';
-
-BACKTICK_QUOTED_IDENTIFIER: '`' ( ~('`' | '\\') | ('\\' .))* '`';
-
-DQ_STRING_LITERAL: '"' ( ~('"' | '\\') | ('\\' .))* '"';
+IDENTIFIER: (Letter | '_') (Letter | DIGIT | '_')*;
 
 INTEGRAL_LITERAL: DIGIT+;
+
+DIGIT_IDENTIFIER: DIGIT (Letter | DIGIT | '_')+;
+
+SQ_STRING_LITERAL: '\'' ( ~'\'' | '\'\'' )* '\'';
+
+BACKTICK_QUOTED_IDENTIFIER: '`' ( ~'`' | '``' )* '`';
+
+DQ_STRING_LITERAL: '"' ( ~'"' | '""' )* '"';
 
 FLOAT_LITERAL: DEC_DOT_DEC;
 

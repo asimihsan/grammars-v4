@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Update non_reserved_keyword rule in AthenaParser.g4 from a keyword list."""
+"""Update non_reserved_keyword rule in AthenaParser.g4 from Athena SELECT reserved list."""
 from __future__ import annotations
 
 import pathlib
