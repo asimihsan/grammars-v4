@@ -57,6 +57,7 @@ COLLECTION      : 'COLLECTION';
 COLUMNS         : 'COLUMNS';
 COMMENT         : 'COMMENT';
 CREATE          : 'CREATE';
+CROSS           : 'CROSS';
 DATA            : 'DATA';
 DATABASE        : 'DATABASE';
 DATABASES       : 'DATABASES';
@@ -88,6 +89,7 @@ FIRST           : 'FIRST';
 FLOAT           : 'FLOAT';
 FORMAT          : 'FORMAT';
 FORMATTED       : 'FORMATTED';
+FULL            : 'FULL';
 FROM            : 'FROM';
 GRAPHVIZ        : 'GRAPHVIZ';
 GROUP           : 'GROUP';
@@ -96,6 +98,7 @@ IF              : 'IF';
 IN              : 'IN';
 INPUTFORMAT     : 'INPUTFORMAT';
 INSERT          : 'INSERT';
+INNER           : 'INNER';
 INT             : 'INT';
 INTEGER         : 'INTEGER';
 INTERSECT       : 'INTERSECT';
@@ -104,9 +107,11 @@ IO              : 'IO';
 ION             : 'ION';
 IS              : 'IS';
 ITEMS           : 'ITEMS';
+JOIN            : 'JOIN';
 JSON            : 'JSON';
 KEYS            : 'KEYS';
 LAST            : 'LAST';
+LEFT            : 'LEFT';
 LIKE            : 'LIKE';
 LIMIT           : 'LIMIT';
 LINES           : 'LINES';
@@ -125,6 +130,7 @@ ON              : 'ON';
 OPTIMIZE        : 'OPTIMIZE';
 OR              : 'OR';
 ORC             : 'ORC';
+OUTER           : 'OUTER';
 ORDER           : 'ORDER';
 OUTPUTFORMAT    : 'OUTPUTFORMAT';
 PARQUET         : 'PARQUET';
@@ -137,6 +143,7 @@ RENAME          : 'RENAME';
 REPAIR          : 'REPAIR';
 REPLACE         : 'REPLACE';
 RESTRICT        : 'RESTRICT';
+RIGHT           : 'RIGHT';
 REWRITE         : 'REWRITE';
 ROW             : 'ROW';
 ROWS            : 'ROWS';
@@ -205,13 +212,17 @@ fragment DIGIT: '0' ..'9';
 
 fragment DEC_DOT_DEC: (DIGIT+ '.' DIGIT+ | DIGIT+ '.' | '.' DIGIT+);
 
-IDENTIFIER: Letter (Letter | DIGIT | '_')*;
-
-SQ_STRING_LITERAL: '\'' ( ~('\'' | '\\') | ('\\' .))* '\'';
-
-DQ_STRING_LITERAL: '"' ( ~('"' | '\\') | ('\\' .))* '"';
+IDENTIFIER: (Letter | '_') (Letter | DIGIT | '_')*;
 
 INTEGRAL_LITERAL: DIGIT+;
+
+DIGIT_IDENTIFIER: DIGIT (Letter | DIGIT | '_')+;
+
+SQ_STRING_LITERAL: '\'' ( ~'\'' | '\'\'' )* '\'';
+
+BACKTICK_QUOTED_IDENTIFIER: '`' ( ~'`' | '``' )* '`';
+
+DQ_STRING_LITERAL: '"' ( ~'"' | '""' )* '"';
 
 FLOAT_LITERAL: DEC_DOT_DEC;
 
